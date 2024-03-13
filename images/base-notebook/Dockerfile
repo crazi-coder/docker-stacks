@@ -3,12 +3,13 @@
 ARG REGISTRY=quay.io
 ARG OWNER=jupyter
 ARG NB_USER="jovyan"
-ARG NB_UID="2000"
-ARG NB_GID="200"
+ARG NB_UID="1001"
+ARG NB_GID="101"
+ARG TAG=dev
 ARG BASE_CONTAINER=$REGISTRY/$OWNER/docker-stacks-foundation
-FROM $BASE_CONTAINER
+FROM $BASE_CONTAINER:$TAG
 
-LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
+LABEL maintainer="Abhilash Joseph C <abhi.jo89@gmail.com.com>"
 
 # Fix: https://github.com/hadolint/hadolint/wiki/DL4006
 # Fix: https://github.com/koalaman/shellcheck/wiki/SC3014
@@ -32,7 +33,7 @@ RUN apt-get update --yes && \
     run-one && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# USER ${NB_UID}
+USER ${NB_UID}
 
 # Install JupyterLab, Jupyter Notebook, JupyterHub and NBClassic
 # Generate a Jupyter Server config
@@ -50,9 +51,8 @@ RUN mamba install --yes \
     mamba clean --all -f -y && \
     npm cache clean --force && \
     jupyter lab clean && \
-    rm -rf "/home/${NB_USER}/.cache/yarn" && \
-    fix-permissions "${CONDA_DIR}" && \
-    fix-permissions "/home/${NB_USER}"
+    rm -rf "/home/${NB_USER}/.cache/yarn"  
+    
 
 ENV JUPYTER_PORT=8888
 EXPOSE $JUPYTER_PORT
@@ -66,8 +66,10 @@ COPY jupyter_server_config.py docker_healthcheck.py /etc/jupyter/
 
 # Fix permissions on /etc/jupyter as root
 USER root
-RUN fix-permissions /etc/jupyter/ && fix-permissions "${CONDA_DIR}" && \
+RUN fix-permissions /etc/jupyter/ 
+RUN fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
+
 
 # HEALTHCHECK documentation: https://docs.docker.com/engine/reference/builder/#healthcheck
 # This healtcheck works well for `lab`, `notebook`, `nbclassic`, `server`, and `retro` jupyter commands

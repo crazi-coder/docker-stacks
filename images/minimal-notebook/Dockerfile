@@ -2,8 +2,12 @@
 # Distributed under the terms of the Modified BSD License.
 ARG REGISTRY=quay.io
 ARG OWNER=jupyter
+ARG TAG=dev
+ARG NB_USER="jovyan"
+ARG NB_UID="1001"
+ARG NB_GID="101"
 ARG BASE_CONTAINER=$REGISTRY/$OWNER/base-notebook
-FROM $BASE_CONTAINER
+FROM $BASE_CONTAINER:${TAG}
 
 LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
 

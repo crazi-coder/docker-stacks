@@ -2,8 +2,12 @@
 # Distributed under the terms of the Modified BSD License.
 ARG REGISTRY=quay.io
 ARG OWNER=jupyter
+ARG NB_USER="jovyan"
+ARG NB_UID="1001"
+ARG NB_GID="101"
+ARG TAG=dev
 ARG BASE_CONTAINER=$REGISTRY/$OWNER/minimal-notebook
-FROM $BASE_CONTAINER
+FROM $BASE_CONTAINER:$TAG
 
 LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
 
@@ -24,7 +28,7 @@ RUN apt-get update --yes && \
     ffmpeg && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# USER ${NB_UID}
+USER ${NB_UID}
 
 # Install Python 3 packages
 RUN mamba install --yes \
@@ -58,9 +62,8 @@ RUN mamba install --yes \
     'sympy' \
     'widgetsnbextension'\
     'xlrd' && \
-    mamba clean --all -f -y && \
-    fix-permissions "${CONDA_DIR}" && \
-    fix-permissions "/home/${NB_USER}"
+    mamba clean --all -f -y 
+    
 
 # Install facets package which does not have a `pip` or `conda-forge` package at the moment
 WORKDIR /tmp
@@ -70,11 +73,11 @@ RUN git clone https://github.com/PAIR-code/facets && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
 
+USER root
 # Import matplotlib the first time to build the font cache
 RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
     fix-permissions "/home/${NB_USER}"
 
 USER ${NB_UID}
-
 
 WORKDIR "${HOME}"

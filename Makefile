@@ -6,10 +6,11 @@ SHELL:=bash
 REGISTRY?=docker.io
 OWNER?=abhijo89
 NB_USER?="jovyan"
-NB_UID?="2000"
-NB_GID?="200"
+NB_UID?="1000"
+NB_GID?="100"
 BUILDER_NAME?="Jupyter"
 PLATFORM?=linux/amd64,linux/arm64
+TAG?=dev#latest
 
 # Function to get directory name from a target name
 get_dir_name = $(notdir $1)
@@ -53,9 +54,9 @@ build/%: ## build the latest image for a stack using the system's architecture
 		echo "Using existing builder ${BUILDER_NAME}..."; \
 		docker buildx use ${BUILDER_NAME}; \
 	fi
-	docker buildx build $(DOCKER_BUILD_ARGS) --platform="${PLATFORM}" --tag "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" "./images/$(notdir $@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)" 
+	docker buildx build $(DOCKER_BUILD_ARGS) --platform="${PLATFORM}" --tag "$(REGISTRY)/$(OWNER)/$(notdir $@):${TAG}" "./images/$(notdir $@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)" --build-arg TAG="$(TAG)"
 	@echo -n "Built image size: "
-	@docker images "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" --format "{{.Size}}"
+	@docker images "$(REGISTRY)/$(OWNER)/$(notdir $@):${TAG}" --format "{{.Size}}"
 
 build-all: $(foreach I, $(ALL_IMAGES), build/$(I)) ## build all stacks
 
@@ -112,7 +113,7 @@ pull/%: ## pull a jupyter image
 	docker pull "$(REGISTRY)/$(OWNER)/$(notdir $@)"
 pull-all: $(foreach I, $(ALL_IMAGES), pull/$(I)) ## pull all images
 push/%: ## push all tags for a jupyter image
-	docker buildx build $(DOCKER_BUILD_ARGS) --platform="${PLATFORM}" --tag "$(REGISTRY)/$(OWNER)/$(call get_dir_name,$@):latest" "./images/$(call get_dir_name,$@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)" --push
+	docker buildx build $(DOCKER_BUILD_ARGS) --platform="${PLATFORM}" --tag "$(REGISTRY)/$(OWNER)/$(call get_dir_name,$@):${TAG}" "./images/$(call get_dir_name,$@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)" --build-arg TAG="$(TAG)" --push
 push-all: $(foreach I, $(ALL_IMAGES), push/$(I)) ## push all tagged images
 
 
@@ -122,8 +123,6 @@ run-shell/%: ## run a bash in interactive mode in a stack
 run-sudo-shell/%: ## run bash in interactive mode as root in a stack
 	docker run -it --rm --user root "$(REGISTRY)/$(OWNER)/$(notdir $@)" $(SHELL)
 
-
-
 test/%: ## run tests against a stack
-	python3 -m tests.run_tests --short-image-name "$(notdir $@)" --registry "$(REGISTRY)" --owner "$(OWNER)"
+	python3 -m tests.run_tests --short-image-name "$(notdir $@)" --registry "$(REGISTRY)" --owner "$(OWNER)" --tag "$(TAG)"
 test-all: $(foreach I, $(ALL_IMAGES), test/$(I)) ## test all stacks
