@@ -3,14 +3,14 @@
 
 # Ubuntu 22.04 (jammy)
 # https://hub.docker.com/_/ubuntu/tags?page=1&name=jammy
-ARG ROOT_CONTAINER=ubuntu:22.04
+ARG ROOT_CONTAINER=ubuntu:24.04
 
 FROM $ROOT_CONTAINER
 
 LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
 ARG NB_USER="jovyan"
-ARG NB_UID="1000"
-ARG NB_GID="100"
+ARG NB_UID="2000"
+ARG NB_GID="200"
 
 # Fix: https://github.com/hadolint/hadolint/wiki/DL4006
 # Fix: https://github.com/koalaman/shellcheck/wiki/SC3014

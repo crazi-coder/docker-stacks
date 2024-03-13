@@ -3,8 +3,16 @@
 .PHONY: docs help test
 
 SHELL:=bash
-REGISTRY?=quay.io
-OWNER?=jupyter
+REGISTRY?=docker.io
+OWNER?=abhijo89
+NB_USER?="jovyan"
+NB_UID?="2000"
+NB_GID?="200"
+BUILDER_NAME?="Jupyter"
+PLATFORM?=linux/amd64,linux/arm64
+
+# Function to get directory name from a target name
+get_dir_name = $(notdir $1)
 
 # Enable BuildKit for Docker build
 export DOCKER_BUILDKIT:=1
@@ -36,11 +44,19 @@ help:
 
 
 build/%: DOCKER_BUILD_ARGS?=
-build/%: ROOT_CONTAINER?=ubuntu:22.04
+build/%: ROOT_CONTAINER?=ubuntu:24.04
 build/%: ## build the latest image for a stack using the system's architecture
-	docker build $(DOCKER_BUILD_ARGS) --rm --force-rm --tag "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" "./images/$(notdir $@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)"
+	@if ! docker buildx ls | grep -qw ${BUILDER_NAME}; then \
+		echo "Creating and using builder ${BUILDER_NAME}..."; \
+		docker buildx create --use --name ${BUILDER_NAME}; \
+	else \
+		echo "Using existing builder ${BUILDER_NAME}..."; \
+		docker buildx use ${BUILDER_NAME}; \
+	fi
+	docker buildx build $(DOCKER_BUILD_ARGS) --platform="${PLATFORM}" --tag "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" "./images/$(notdir $@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)" 
 	@echo -n "Built image size: "
 	@docker images "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" --format "{{.Size}}"
+
 build-all: $(foreach I, $(ALL_IMAGES), build/$(I)) ## build all stacks
 
 
@@ -96,7 +112,7 @@ pull/%: ## pull a jupyter image
 	docker pull "$(REGISTRY)/$(OWNER)/$(notdir $@)"
 pull-all: $(foreach I, $(ALL_IMAGES), pull/$(I)) ## pull all images
 push/%: ## push all tags for a jupyter image
-	docker push --all-tags "$(REGISTRY)/$(OWNER)/$(notdir $@)"
+	docker buildx build $(DOCKER_BUILD_ARGS) --platform="${PLATFORM}" --tag "$(REGISTRY)/$(OWNER)/$(call get_dir_name,$@):latest" "./images/$(call get_dir_name,$@)" --build-arg REGISTRY="$(REGISTRY)" --build-arg OWNER="$(OWNER)" --push
 push-all: $(foreach I, $(ALL_IMAGES), push/$(I)) ## push all tagged images
 
 

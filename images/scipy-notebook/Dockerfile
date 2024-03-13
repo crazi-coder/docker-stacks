@@ -24,7 +24,7 @@ RUN apt-get update --yes && \
     ffmpeg && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-USER ${NB_UID}
+# USER ${NB_UID}
 
 # Install Python 3 packages
 RUN mamba install --yes \
@@ -75,5 +75,6 @@ RUN MPLBACKEND=Agg python -c "import matplotlib.pyplot" && \
     fix-permissions "/home/${NB_USER}"
 
 USER ${NB_UID}
+
 
 WORKDIR "${HOME}"

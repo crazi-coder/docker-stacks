@@ -2,6 +2,9 @@
 # Distributed under the terms of the Modified BSD License.
 ARG REGISTRY=quay.io
 ARG OWNER=jupyter
+ARG NB_USER="jovyan"
+ARG NB_UID="2000"
+ARG NB_GID="200"
 ARG BASE_CONTAINER=$REGISTRY/$OWNER/docker-stacks-foundation
 FROM $BASE_CONTAINER
 
@@ -29,7 +32,7 @@ RUN apt-get update --yes && \
     run-one && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-USER ${NB_UID}
+# USER ${NB_UID}
 
 # Install JupyterLab, Jupyter Notebook, JupyterHub and NBClassic
 # Generate a Jupyter Server config
@@ -63,7 +66,8 @@ COPY jupyter_server_config.py docker_healthcheck.py /etc/jupyter/
 
 # Fix permissions on /etc/jupyter as root
 USER root
-RUN fix-permissions /etc/jupyter/
+RUN fix-permissions /etc/jupyter/ && fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
 
 # HEALTHCHECK documentation: https://docs.docker.com/engine/reference/builder/#healthcheck
 # This healtcheck works well for `lab`, `notebook`, `nbclassic`, `server`, and `retro` jupyter commands
